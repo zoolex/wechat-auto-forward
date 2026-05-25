@@ -2,8 +2,8 @@ name: 武汉教视 每日聚合推送
 
 on:
   schedule:
-    # 每天 23:00 北京时间 (UTC+8 → 15:00 UTC)
-    - cron: "0 15 * * *"
+    # 每天 23:30 北京时间 (UTC+8 → 15:30 UTC)
+    - cron: "30 15 * * *"
   workflow_dispatch:  # 允许手动触发测试
 
 permissions:
