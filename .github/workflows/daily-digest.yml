@@ -6,6 +6,9 @@ on:
     - cron: "0 15 * * *"
   workflow_dispatch:  # 允许手动触发测试
 
+permissions:
+  contents: write
+
 jobs:
   digest:
     runs-on: ubuntu-latest
