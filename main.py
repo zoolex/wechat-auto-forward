@@ -18,6 +18,10 @@ DATA_FILE = Path(__file__).parent / "seen_articles.json"
 # ---- Timezone ----
 CST = timezone(timedelta(hours=8))
 
+# 只推送最近 N 小时内的文章（避免首次运行时把历史文章全推出来）
+# 设为 48 小时，覆盖偶尔延迟发布的情况
+MAX_AGE_HOURS = 48
+
 
 def load_seen() -> set:
     if DATA_FILE.exists():
@@ -33,13 +37,13 @@ def save_seen(ids: set):
 
 
 def extract_article_id(url: str) -> str:
-    """Extract unique ID from mp.weixin.qq.com URL, e.g. s/i4dXMFzdbBs-BE4LPlVQQg"""
+    """Extract unique ID from mp.weixin.qq.com URL."""
     parts = url.rstrip("/").split("/")
     return parts[-1] if parts else url
 
 
 def fetch_rss() -> list[dict]:
-    """Fetch and parse RSS feed, return list of article dicts sorted by pubDate asc"""
+    """Fetch and parse RSS feed."""
     feed = feedparser.parse(RSS_URL)
     entries = []
     for entry in feed.entries:
@@ -64,8 +68,17 @@ def fetch_rss() -> list[dict]:
     return entries
 
 
+def is_recent(pub_date: datetime) -> bool:
+    """True if article was published within MAX_AGE_HOURS."""
+    if not pub_date:
+        # 无发布时间：当作今日文章处理（用户选 B）
+        return True
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=MAX_AGE_HOURS)
+    return pub_date >= cutoff
+
+
 def build_message(new_articles: list[dict], existing_count: int) -> tuple[str, str]:
-    """Build title and Markdown body for Server酱 push"""
+    """Build title and Markdown body for Server酱 push."""
     today_str = datetime.now(CST).strftime("%Y-%m-%d")
     title = f"武汉教视 今日更新 ({len(new_articles)}篇)"
 
@@ -86,7 +99,7 @@ def build_message(new_articles: list[dict], existing_count: int) -> tuple[str, s
 
 
 def push_to_wechat(title: str, content: str):
-    """Send via Server酱 (ServerChan Turbo)"""
+    """Send via Server酱 (ServerChan Turbo)."""
     url = f"https://sctapi.ftqq.com/{SENDKEY}.send"
     resp = requests.post(url, data={"title": title, "desp": content}, timeout=15)
     result = resp.json()
@@ -104,10 +117,14 @@ def main():
         print("RSS 中无文章，跳过")
         return
 
-    seen = load_seen()
-    new_articles = [a for a in articles if a["id"] not in seen]
+    # 只保留近期文章（避免历史文章涌入）
+    recent_articles = [a for a in articles if is_recent(a["pub_date"])]
+    print(f"RSS 共 {len(articles)} 篇，近期 {len(recent_articles)} 篇")
 
-    print(f"RSS 共 {len(articles)} 篇，新文章 {len(new_articles)} 篇")
+    seen = load_seen()
+    new_articles = [a for a in recent_articles if a["id"] not in seen]
+
+    print(f"新文章 {len(new_articles)} 篇")
 
     if new_articles:
         title, body = build_message(new_articles, len(seen))
