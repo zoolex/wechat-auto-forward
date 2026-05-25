@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .env
 test_push.py
+set_secrets.py
+api_push.py
