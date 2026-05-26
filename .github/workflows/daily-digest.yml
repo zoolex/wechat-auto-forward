@@ -1,0 +1,40 @@
+name: 姝︽眽鏁欒 姣忔棩鑱氬悎鎺ㄩ€?
+on:
+  schedule:
+    # 姣忓ぉ 23:30 鍖椾含鏃堕棿 (UTC+8 鈫?15:30 UTC)
+    - cron: "30 15 * * *"
+  workflow_dispatch:  # 鍏佽鎵嬪姩瑙﹀彂娴嬭瘯
+
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run digest
+        env:
+          RSS_URL: ${{ secrets.RSS_URL }}
+          SERVER_CHAN_KEY: ${{ secrets.SERVER_CHAN_KEY }}
+        run: python main.py
+
+      - name: Commit seen_articles
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add seen_articles.json
+          git diff --staged --quiet || git commit -m "Update seen articles [skip ci]"
+          git push
