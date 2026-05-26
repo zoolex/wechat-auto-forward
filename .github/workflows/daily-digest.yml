@@ -1,9 +1,10 @@
-name: 姝︽眽鏁欒 姣忔棩鑱氬悎鎺ㄩ€?
+name: 武汉教视 每日聚合推送
+
 on:
   schedule:
-    # 姣忓ぉ 23:30 鍖椾含鏃堕棿 (UTC+8 鈫?15:30 UTC)
+    # 每天 23:30 北京时间 (UTC+8 → 15:30 UTC)
     - cron: "30 15 * * *"
-  workflow_dispatch:  # 鍏佽鎵嬪姩瑙﹀彂娴嬭瘯
+  workflow_dispatch:  # 允许手动触发测试
 
 permissions:
   contents: write
