@@ -2,9 +2,8 @@ name: 武汉教视 每日聚合推送
 
 on:
   schedule:
-    # 每天 23:30 北京时间 (UTC+8 的 15:30 UTC)
-    - cron: \"30 15 * * *\"
-  workflow_dispatch:  # 支持手动触发测试
+    - cron: '30 15 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,29 +12,24 @@ jobs:
   digest:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: \"3.12\"
-
+          python-version: '3.12'
       - name: Install dependencies
         run: pip install -r requirements.txt
-
       - name: Run digest
         env:
-          RSS_URL: \${{ secrets.RSS_URL }}
-          SERVER_CHAN_KEY: \${{ secrets.SERVER_CHAN_KEY }}
+          RSS_URL: ${{ secrets.RSS_URL }}
+          SERVER_CHAN_KEY: ${{ secrets.SERVER_CHAN_KEY }}
         run: python main.py
-
       - name: Commit seen_articles
         if: success()
         run: |
-          git config user.name \"github-actions[bot]\"
-          git config user.email \"github-actions[bot]@users.noreply.github.com\"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add seen_articles.json
-          git diff --staged --quiet || git commit -m \"Update seen articles [skip ci]\"
+          git diff --staged --quiet || git commit -m "Update seen articles [skip ci]"
           git push
