@@ -1,8 +1,6 @@
 name: 武汉教视 每日聚合推送
 
 on:
-  schedule:
-    - cron: '30 15 * * *'
   workflow_dispatch:
 
 permissions:
