@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """武汉教视公众号文章自动聚合 → Server酱推送到微信"""
 
+import html
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -36,6 +38,16 @@ def save_seen(ids: set):
     )
 
 
+def sanitize_title(raw_title: str, max_len: int = 120) -> str:
+    """清洗标题：去 HTML 标签、截断过长文本（RSS 源偶尔把全文塞进 title）"""
+    title = html.unescape(raw_title)
+    title = re.sub(r"<[^>]*>", "", title)          # 去掉 HTML 标签
+    title = re.sub(r"\s+", " ", title).strip()     # 合并空白
+    if len(title) > max_len:
+        title = title[:max_len] + "..."
+    return title
+
+
 def extract_article_id(url: str) -> str:
     """Extract unique ID from mp.weixin.qq.com URL."""
     parts = url.rstrip("/").split("/")
@@ -58,7 +70,7 @@ def fetch_rss() -> list[dict]:
         entries.append(
             {
                 "id": extract_article_id(link),
-                "title": entry.get("title", "(无标题)").strip(),
+                "title": sanitize_title(entry.get("title", "(无标题)")),
                 "link": link,
                 "pub_date": pub_date,
             }
